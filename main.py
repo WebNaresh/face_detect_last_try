@@ -35,7 +35,6 @@ def select_thief_image():
     thief_image_path = filedialog.askopenfilename()
     thief_image_label.config(text=f"Thief Image: {thief_image_path}")
     logging.info(f"Selected thief image: {thief_image_path}")
-    log_memory_usage("After selecting thief image")
 
     def obtain_face_representation():
         global thief_face
@@ -62,7 +61,6 @@ def select_image_folder():
     progress_bar.config(maximum=total_images)
     progress_label.config(text=f"Total images: {total_images}")
     logging.info(f"Total images in folder: {total_images}")
-    log_memory_usage("After selecting image folder")
 
 def download_images():
     global detected_images
@@ -80,12 +78,10 @@ def download_images():
         for img_path in detected_images:
             zipf.write(img_path, os.path.basename(img_path))
     logging.info(f"Images downloaded successfully to {save_path}.")
-    log_memory_usage("After downloading images")
     result_label.config(text=f"Images downloaded successfully to {save_path}.")
 
 def process_image(image_path):
     try:
-        log_memory_usage(f"Before processing image {image_path}")
         # Try to read the image
         img = cv2.imread(image_path)
         if img is None:
@@ -100,13 +96,13 @@ def process_image(image_path):
 
         # Verify each detected face
         for face in faces:
-            result = DeepFace.verify(img1_path=thief_image_path, img2_path=image_path,  model_name = models[0], enforce_detection=False, distance_metric="cosine")  # Adjusted threshold
-            logging.info(f"Verification result: {result["distance"]}, verified: {result['verified']}")
-            logging.info(f" {image_path}")
+            result = DeepFace.verify(img1_path=thief_image_path, img2_path=image_path,  model_name = models[2])  # Adjusted threshold
+            logging.info(f"Verification result: {result["distance"]}, verified: {result['verified']} and also {result['distance'] <= 0.008}")
+            logging.info(f"Path of Image {image_path}")
+            logging.info(result)
             
-            if result["verified"] and result["distance"] <= 0:  # Adding confidence check
+            if  result["distance"] <= 0.008:  # Adding confidence check
                 logging.info(f"Thief detected")
-                log_memory_usage(f"After processing image {image_path}")
                 return image_path
     except cv2.error as e:
         logging.error(f"OpenCV error processing image {image_path}: {e}")
@@ -137,14 +133,12 @@ def detect_thief():
                 return
 
             logging.info("Starting thief detection...")
-            log_memory_usage("Before starting thief detection")
             thief_image = cv2.imread(thief_image_path)
             if thief_image is None:
                 raise ValueError(f"Unable to read thief image: {thief_image_path}")
 
             image_paths = [os.path.join(folder_path, filename) for filename in os.listdir(folder_path) if filename.endswith(('.png', '.jpg', '.jpeg'))]
             progress_var.set(0)
-            logging.info(f"Total images to process: {len(image_paths)}")
 
             start_time = time.time()
 
@@ -168,7 +162,6 @@ def detect_thief():
 
             result_label.config(text=f"Detected {len(detected_images)} images with thief. Time taken: {total_time:.2f} seconds")
             logging.info(f"Detection complete. {len(detected_images)} images detected with thief.")
-            log_memory_usage("After completing thief detection")
             for img_path in detected_images:
                 try:
                     img = Image.open(img_path)
@@ -198,7 +191,6 @@ def reset_state():
     result_label.config(text="")
     progress_var.set(0)
     progress_label.config(text="Compared 0 of 0 images")
-    log_memory_usage("After resetting state")
 
     for widget in scrollable_frame.winfo_children():
         widget.destroy()
@@ -244,11 +236,9 @@ scrollable_frame.bind(
         scrollregion=canvas.bbox("all")
     )
 )
-log_memory_usage("Before loading models")
 
 # Load the model using DeepFace.build_model
-model = DeepFace.build_model(models[0])
-log_memory_usage("After loading models")
+model = DeepFace.build_model(models[1])
 
 
 canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
