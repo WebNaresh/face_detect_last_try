@@ -3,3 +3,4 @@ opencv-python
 Pillow
 deepface
 tf-keras
+psutil
